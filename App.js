@@ -8,6 +8,9 @@
 
 // import {Asset} from 'expo-asset';
 import React, {useEffect, useState} from 'react';
+import {Provider} from 'react-redux';
+
+import store from './src/redux';
 
 // import {SafeAreaView, StyleSheet} from 'react-native';
 import Stories from './src/components/Stories';
@@ -35,9 +38,13 @@ const App = () => {
     request();
   }, []); */
 
-  console.log('{...{stories2}}', {...{stories2}});
+  console.log('{...{stories2}}', stories2.length);
 
-  return <Stories {...{stories: stories2}} />;
+  return (
+    <Provider store={store}>
+      <Stories {...{stories: stories2}} />
+    </Provider>
+  );
 };
 
 export default App;

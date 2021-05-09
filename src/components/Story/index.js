@@ -12,6 +12,13 @@ import {
   Animated,
 } from 'react-native';
 import {useInterval} from '../../hooks/useInterval';
+import {useDispatch, useSelector} from 'react-redux';
+
+import {
+  nextImage,
+  reset,
+  updateCurrentStoryIndex,
+} from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
 
@@ -19,6 +26,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
   image: {
     ...StyleSheet.absoluteFill,
     width: null,
@@ -39,70 +47,62 @@ const styles = StyleSheet.create({
 
     padding: 16,
   },
-
-  footer: {
-    // ...StyleSheet.absoluteFillObject,
-    // bottom: 0,
-    position: 'absolute',
-    bottom: 0,
-    width: width,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    height: 218,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-
-    padding: 16,
-  },
-
-  input: {
-    borderWidth: 2,
-    borderColor: 'white',
-    height: 28,
-    width: 250,
-    borderRadius: Platform.OS === 'android' ? 0 : 10,
-  },
 });
 
-const Story = ({story, indexPhoto, canChange, currentIndexStory, nextFn}) => {
-  const {source, photos} = story;
-  const [index, setIndex] = useState(indexPhoto);
-  let animation = useRef(new Animated.Value(0));
+const Story = ({story, selfIndex, scrollRef, canChange}) => {
+  const {photos} = story;
+  const index = useSelector(state => state.stories.images[selfIndex].index);
+  const totalStories = useSelector(state => state.stories.images.length);
+  const currentStoryIndex = useSelector(
+    state => state.stories.currentStoryIndex,
+  );
+  const animation = useRef(new Animated.Value(0));
 
-  /* useInterval(() => {
-    // console.log('currentIndexStory', currentIndexStory);
-    if (canChange) {
-      nextFn(currentIndexStory, indexPhoto);
-    }
-  }, 4000); */
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(animation.current, {
-          toValue: 100,
-          duration: 4000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(animation.current, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false,
-        }),
-      ]),
-    ).start();
-  }, [index]);
+  // useEffect(() => {
+  //   Animated.loop(
+  //     Animated.sequence([
+  //       Animated.timing(animation.current, {
+  //         toValue: 100,
+  //         duration: 4000,
+  //         useNativeDriver: false,
+  //       }),
+  //       Animated.timing(animation.current, {
+  //         toValue: 0,
+  //         duration: 0,
+  //         useNativeDriver: false,
+  //       }),
+  //     ]),
+  //   ).start();
+  // }, []);
 
-  const width = animation.current.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp',
-  });
+  // const width2 = animation.current.interpolate({
+  //   inputRange: [0, 100],
+  //   outputRange: ['0%', '100%'],
+  //   extrapolate: 'clamp',
+  // });
 
-  useEffect(() => {
-    if (canChange) {
-      setIndex(indexPhoto);
-    }
-  }, [indexPhoto, canChange]);
+  // useInterval(() => {
+  //   if (selfIndex === currentStoryIndex) {
+  //     console.log('selfIndex', selfIndex);
+  //     console.log('currentStoryIndex', currentStoryIndex);
+  //     dispatch(nextImage({storyIndex: selfIndex}));
+  //     console.log('index', index);
+  //     if (index === photos.length - 1) {
+  //       console.log('aq', index);
+  //       if (selfIndex < totalStories - 1)
+  //         dispatch(updateCurrentStoryIndex({index: selfIndex + 1}));
+
+  //       scrollRef?.current?.scrollTo({x: (selfIndex + 1) * width});
+
+  //       if (selfIndex === totalStories - 1) {
+  //         scrollRef?.current?.scrollTo({x: 0});
+  //         dispatch(reset());
+  //       }
+  //     }
+  //   }
+  // }, 4000);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,8 +132,6 @@ const Story = ({story, indexPhoto, canChange, currentIndexStory, nextFn}) => {
           </View>
         ))}
       </View>
-
-      <View style={styles.footer}></View>
     </SafeAreaView>
   );
 };

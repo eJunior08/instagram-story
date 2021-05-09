@@ -1,35 +1,28 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Dimensions,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Pressable,
-} from 'react-native';
-import ButtonStory from '../ButtonStory';
+import {Animated, StyleSheet, View, Dimensions} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import ButtonContainerStory from '../ButtonContainerStory';
 import Story from '../Story';
+
+import {
+  create,
+  updateCurrentStoryIndex,
+} from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
 const perspective = width;
 const angle = Math.atan(perspective / (width / 2));
-const ratio = Platform.OS === 'ios' ? 2 : 1.2;
+const ratio = Platform.OS === 'ios' ? 2 : 1.15;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-});
+import styles from './styles';
 
 const Stories = ({stories = []}) => {
   const [x, setX] = useState(new Animated.Value(0));
   const scroll = useRef(null);
   const [indexPhoto, setIndexPhoto] = useState(0);
   const [currentIndexStory, setCurrentIndexStory] = useState(0);
+
+  const dispatch = useDispatch();
 
   const getStyle = index => {
     const offset = width * index;
@@ -71,25 +64,7 @@ const Stories = ({stories = []}) => {
     };
   };
 
-  function prevFn(currentIndexStory, currentIndexPhoto) {
-    if (currentIndexPhoto === 0) {
-      return scroll?.current?.scrollTo({x: (currentIndexStory - 1) * width});
-    }
-
-    setIndexPhoto(currentIndexPhoto - 1);
-  }
-
-  function nextFn(currentIndexStory, currentIndexPhoto) {
-    setCurrentIndexStory(currentIndexStory);
-    const lastPhoto = stories[currentIndexStory].photos.length - 1;
-
-    if (currentIndexPhoto === lastPhoto) {
-      // setCurrentIndexStory(currentIndexStory + 1);
-      return scroll?.current?.scrollTo({x: (currentIndexStory + 1) * width});
-    }
-
-    setIndexPhoto(currentIndexPhoto + 1);
-  }
+  dispatch(create({totalStories: stories.length, stories}));
 
   return (
     <View style={styles.container}>
@@ -99,11 +74,12 @@ const Stories = ({stories = []}) => {
             {...{story}}
             indexPhoto={indexPhoto}
             canChange={index === currentIndexStory}
-            currentIndexStory={index}
-            nextFn={nextFn}
+            selfIndex={index}
+            scrollRef={scroll}
           />
         </Animated.View>
       ))}
+
       <Animated.ScrollView
         ref={scroll}
         style={StyleSheet.absoluteFillObject}
@@ -122,54 +98,10 @@ const Stories = ({stories = []}) => {
         })}
         decelerationRate={'fast'}
         horizontal>
-        <View
-          style={{
-            // backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            flex: 1,
-            flexDirection: 'row',
-          }}>
-          {stories.map((_, index) => (
-            <ButtonStory
-              key={index}
-              prevFn={() => prevFn(index, indexPhoto)}
-              nextFn={() => nextFn(index, indexPhoto)}
-            />
-          ))}
-        </View>
+        <ButtonContainerStory stories={stories} scrollRef={scroll} />
       </Animated.ScrollView>
     </View>
   );
 };
 
 export default Stories;
-
-/* 
-<>
-              <Pressable
-                onTouchEnd={() => {
-                  console.log('eeeeeend');
-                  scroll.current.scrollTo({
-                    x: (index - 1) * width,
-                  });
-                }}
-                style={{
-                  // backgroundColor: 'rgba(110, 50, 38, 0.5)',
-                  width: width * 0.3,
-                }}>
-                <Text>hau</Text>
-              </Pressable>
-              <Pressable
-                onTouchEnd={() => {
-                  console.log('eeeeeend 2');
-                  scroll.current.scrollTo({
-                    x: (index + 1) * width,
-                  });
-                }}
-                style={{
-                  // backgroundColor: 'rgba(38, 50, 110, 0.5)',
-                  width: width * 0.7,
-                }}>
-                <Text>hau</Text>
-              </Pressable>
-            </>
-*/
