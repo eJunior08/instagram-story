@@ -7,6 +7,7 @@ import Story from '../Story';
 import {
   create,
   updateCurrentStoryIndex,
+  initStories,
 } from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
@@ -20,7 +21,12 @@ const Stories = ({stories = []}) => {
   const [x, setX] = useState(new Animated.Value(0));
   const scroll = useRef(null);
   const [indexPhoto, setIndexPhoto] = useState(0);
-  const [currentIndexStory, setCurrentIndexStory] = useState(0);
+
+  const qtdStories = stories.length;
+  const arrQtdImages = stories.map(story => story.photos.length);
+
+  const state = useSelector(state => state.stories.stories);
+  console.log('state', state);
 
   const dispatch = useDispatch();
 
@@ -64,6 +70,10 @@ const Stories = ({stories = []}) => {
     };
   };
 
+  useEffect(() => {
+    dispatch(initStories({qtdStories, arrQtdImages}));
+  }, []);
+
   dispatch(create({totalStories: stories.length, stories}));
 
   return (
@@ -72,9 +82,8 @@ const Stories = ({stories = []}) => {
         <Animated.View style={[getStyle(index)]} key={story.id}>
           <Story
             {...{story}}
-            indexPhoto={indexPhoto}
-            canChange={index === currentIndexStory}
             selfIndex={index}
+            index={state[index]?.currentIndexImage ?? 0}
             scrollRef={scroll}
           />
         </Animated.View>

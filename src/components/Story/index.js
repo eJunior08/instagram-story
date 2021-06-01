@@ -49,15 +49,10 @@ const styles = StyleSheet.create({
   },
 });
 
-const Story = ({story, selfIndex, scrollRef, canChange}) => {
+const Story = ({story, selfIndex, index, scrollRef}) => {
   const {photos} = story;
-  const index = useSelector(state => state.stories.images[selfIndex].index);
-  const totalStories = useSelector(state => state.stories.images.length);
-  const currentStoryIndex = useSelector(
-    state => state.stories.currentStoryIndex,
-  );
-  const animation = useRef(new Animated.Value(0));
 
+  const animation = useRef(new Animated.Value(0));
   const dispatch = useDispatch();
 
   // useEffect(() => {
@@ -108,7 +103,7 @@ const Story = ({story, selfIndex, scrollRef, canChange}) => {
     <SafeAreaView style={styles.container}>
       <Image
         style={styles.image}
-        source={{width: '100%', uri: photos[index].source}}
+        source={{width: '100%', uri: photos[index]?.source}}
       />
 
       <View style={styles.header}>

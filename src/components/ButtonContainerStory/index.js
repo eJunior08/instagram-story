@@ -6,7 +6,9 @@ const {width} = Dimensions.get('window');
 import ButtonStory from '../ButtonStory';
 
 import {
+  next,
   nextImage,
+  prev,
   prevImage,
   updateCurrentStoryIndex,
 } from '../../redux/slices/stories.slice';
@@ -15,8 +17,7 @@ import styles from './styles';
 
 const ButtonContainerStory = ({stories, scrollRef}) => {
   const dispatch = useDispatch();
-  const images = useSelector(state => state.stories.images);
-  console.log('images', images);
+  // const images = useSelector(state => state.stories.images);
 
   return (
     <View style={styles.container}>
@@ -24,23 +25,10 @@ const ButtonContainerStory = ({stories, scrollRef}) => {
         <ButtonStory
           key={index}
           prevFn={() => {
-            dispatch(prevImage({storyIndex: index}));
-            if (images[index].index === 0) {
-              if (index > 0)
-                dispatch(updateCurrentStoryIndex({index: index - 1}));
-
-              scrollRef?.current?.scrollTo({x: (index - 1) * width});
-            }
+            dispatch(prev());
           }}
           nextFn={() => {
-            console.log('next');
-            dispatch(nextImage({storyIndex: index}));
-            if (images[index].index === images[index].total - 1) {
-              if (index < stories.length - 1)
-                dispatch(updateCurrentStoryIndex({index: index + 1}));
-
-              scrollRef?.current?.scrollTo({x: (index + 1) * width});
-            }
+            dispatch(next());
           }}
         />
       ))}
