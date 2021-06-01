@@ -29,12 +29,12 @@ const ButtonContainerStory = ({
   const dispatch = useDispatch();
   // const images = useSelector(state => state.stories.images);
 
-  /* console.log('stories ====> ', stories);
-  console.log('isLastImage ====> ', isLastImage);
-  console.log('isFirstImage ====> ', isFirstImage);
-  console.log('currentStoryIndex ====> ', currentStoryIndex); */
-
-  console.log('isLastStory', isLastStory);
+  // console.log('stories ====> ', stories);
+  // console.log('\n\n');
+  // console.log('isLastImage ====> ', isLastImage);
+  // console.log('isFirstImage ====> ', isFirstImage);
+  // console.log('currentStoryIndex ====> ', currentStoryIndex);
+  // console.log('isLastStory', isLastStory);
 
   return (
     <View style={styles.container}>

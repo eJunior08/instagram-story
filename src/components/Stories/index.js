@@ -122,7 +122,16 @@ const Stories = ({stories = []}) => {
             const resto =
               currentPosScrol % e.nativeEvent.layoutMeasurement.width;
 
-            if (resto === 0) {
+            const error =
+              resto > 0
+                ? Math.floor(
+                    Math.abs(resto - e.nativeEvent.layoutMeasurement.width),
+                  ) === 0
+                : resto === 0;
+
+            // console.log('error', error);
+
+            if (error) {
               console.log('scrollDirection x ==========> ', scrollDirection.x);
               console.log('currentPosScrol   ==========> ', currentPosScrol);
               if (scrollDirection.x < currentPosScrol) {
