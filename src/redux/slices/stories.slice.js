@@ -36,28 +36,60 @@ const stories_slice = createSlice({
 
       state.stories[0].isActive = true;
     },
-    next: state => {
-      state.stories.forEach((story, index) => {
-        if (story.isActive && story.currentIndexImage + 1 === story.qtdImages) {
-          story.isActive = false;
-          state.stories[index + 1].isActive = true;
-          return;
-        }
+    next: (state, {payload}) => {
+      if (!isNaN(payload.storyindex)) {
+        const currentStory = state.stories[payload.storyindex];
 
-        return story.isActive && story.currentIndexImage++;
-      });
+        const isLastImage = !(
+          currentStory.currentIndexImage <
+          currentStory.qtdImages - 1
+        );
+
+        if (!isLastImage) {
+          console.log('Não é ultima imagem');
+          state.stories[payload.storyindex].currentIndexImage++;
+        }
+      } else {
+        state.stories.forEach(
+          story => story.isActive && story.currentIndexImage++,
+        );
+      }
     },
-    prev: state => {
-      state.stories.forEach((story, index) => {
-        console.log('prev 1', story);
-        if (story.isActive && story.currentIndexImage === 0) {
-          story.isActive = false;
-          state.stories[index - 1].isActive = true;
-          return;
-        }
-        console.log('prev 2');
+    prev: (state, {payload}) => {
+      if (!isNaN(payload.storyindex)) {
+        const currentStory = state.stories[payload.storyindex];
 
-        return story.isActive && story.currentIndexImage--;
+        const isFirstImage = currentStory.currentIndexImage === 0;
+
+        if (!isFirstImage) {
+          console.log('Não é a primeira imagem');
+          state.stories[payload.storyindex].currentIndexImage--;
+        }
+      } else {
+        state.stories.forEach(
+          story => story.isActive && story.currentIndexImage--,
+        );
+      }
+      /* if (payload.storyindex) {
+        console.log('payload', payload);
+        const currentStory = state.stories[payload.storyindex];
+        console.log('currentStory', currentStory);
+        if (currentStory.currentIndexImage > 0)
+          state.stories[payload.storyindex].currentIndexImage--;
+      } else {
+        state.stories.forEach(
+          story => story.isActive && story.currentIndexImage--,
+        );
+      } */
+    },
+    changeActiveStory: (state, {payload}) => {
+      state.stories[payload.index].isActive = payload.isActive;
+    },
+    resetStories: state => {
+      console.log('resetou');
+      state.stories.forEach(s => {
+        s.currentIndexImage = 0;
+        s.isActive = false;
       });
     },
 
@@ -78,6 +110,7 @@ const stories_slice = createSlice({
     },
     updateCurrentStoryIndex: (state, {payload}) => {
       state.currentStoryIndex = payload.index;
+      state.stories[payload.index].isActive = true;
     },
     reset: state => {
       state.currentStoryIndex = 0;
@@ -90,6 +123,8 @@ export const {
   initStories,
   next,
   prev,
+  changeActiveStory,
+  resetStories,
 
   create,
   nextImage,

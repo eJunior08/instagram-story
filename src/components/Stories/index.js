@@ -8,6 +8,7 @@ import {
   create,
   updateCurrentStoryIndex,
   initStories,
+  changeActiveStory,
 } from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
@@ -26,7 +27,25 @@ const Stories = ({stories = []}) => {
   const arrQtdImages = stories.map(story => story.photos.length);
 
   const state = useSelector(state => state.stories.stories);
-  console.log('state', state);
+  // console.log('state', state);
+
+  const activeStory = state.find(s => s.isActive);
+  console.log('activeStory ====> ', activeStory);
+
+  const [scrollDirection, setScrollDirection] = useState({
+    direction: 'FRENTE',
+    x: 0,
+  });
+
+  const currentStoryIndex = useSelector(
+    state => state.stories.stories,
+  ).findIndex(s => s.isActive);
+
+  console.log('currentStoryIndex', currentStoryIndex);
+
+  const everyStoryIsInactive = useSelector(
+    state => state.stories.stories,
+  ).every(s => !s.isActive);
 
   const dispatch = useDispatch();
 
@@ -97,9 +116,71 @@ const Stories = ({stories = []}) => {
         snapToInterval={0}
         contentContainerStyle={{width: width * stories.length}}
         onScroll={Animated.event([{nativeEvent: {contentOffset: {x}}}], {
-          listener: e => {
-            const currentPosScrol = parseInt(e.nativeEvent.contentOffset.x);
-            if (currentPosScrol % parseInt(width) === 0) {
+          listener: async e => {
+            const currentPosScrol = e.nativeEvent.contentOffset.x;
+
+            const resto =
+              currentPosScrol % e.nativeEvent.layoutMeasurement.width;
+
+            if (resto === 0) {
+              console.log('scrollDirection x ==========> ', scrollDirection.x);
+              console.log('currentPosScrol   ==========> ', currentPosScrol);
+              if (scrollDirection.x < currentPosScrol) {
+                console.log('PRA FRENTEEEE ====>');
+
+                if (everyStoryIsInactive) {
+                  console.log('TODOS FALSE');
+                  setScrollDirection({
+                    x: width * (stories.length - 1),
+                    direction: 'FRENTE',
+                  });
+                  dispatch(
+                    changeActiveStory({
+                      index: state.length - 1,
+                      isActive: true,
+                    }),
+                  );
+                } else {
+                  setScrollDirection({x: currentPosScrol, direction: 'FRENTE'});
+                  await dispatch(
+                    changeActiveStory({
+                      index: currentStoryIndex,
+                      isActive: false,
+                    }),
+                  );
+                  await dispatch(
+                    changeActiveStory({
+                      index: currentStoryIndex + 1,
+                      isActive: true,
+                    }),
+                  );
+                }
+              } else if (scrollDirection.x > currentPosScrol) {
+                if (everyStoryIsInactive) {
+                  console.log('TODOS FALSE');
+                  setScrollDirection({x: 0, direction: 'TRAS'});
+                  dispatch(
+                    changeActiveStory({
+                      index: 0,
+                      isActive: true,
+                    }),
+                  );
+                } else {
+                  setScrollDirection({x: currentPosScrol, direction: 'TRAS'});
+                  dispatch(
+                    changeActiveStory({
+                      index: currentStoryIndex,
+                      isActive: false,
+                    }),
+                  );
+                  dispatch(
+                    changeActiveStory({
+                      index: currentStoryIndex - 1,
+                      isActive: true,
+                    }),
+                  );
+                }
+              }
               setIndexPhoto(0);
             }
           },
@@ -107,7 +188,17 @@ const Stories = ({stories = []}) => {
         })}
         decelerationRate={'fast'}
         horizontal>
-        <ButtonContainerStory stories={stories} scrollRef={scroll} />
+        <ButtonContainerStory
+          stories={stories}
+          scrollRef={scroll}
+          currentStoryIndex={currentStoryIndex}
+          isLastImage={
+            activeStory?.currentIndexImage === (activeStory?.qtdImages ?? 0) - 1
+          }
+          isFirstImage={activeStory?.currentIndexImage === 0}
+          isLastStory={currentStoryIndex === state.length - 1}
+          isFirstStory={currentStoryIndex === 0}
+        />
       </Animated.ScrollView>
     </View>
   );
