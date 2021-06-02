@@ -9,6 +9,9 @@ import {
   updateCurrentStoryIndex,
   initStories,
   changeActiveStory,
+  next,
+  resetStories,
+  prev,
 } from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
@@ -17,11 +20,12 @@ const angle = Math.atan(perspective / (width / 2));
 const ratio = Platform.OS === 'ios' ? 2 : 1.15;
 
 import styles from './styles';
+import {useInterval} from '../../hooks/useInterval';
 
 const Stories = ({stories = []}) => {
   const [x, setX] = useState(new Animated.Value(0));
   const scroll = useRef(null);
-  const [indexPhoto, setIndexPhoto] = useState(0);
+  const [delay, setDelay] = useState(4000);
 
   const qtdStories = stories.length;
   const arrQtdImages = stories.map(story => story.photos.length);
@@ -95,6 +99,56 @@ const Stories = ({stories = []}) => {
 
   dispatch(create({totalStories: stories.length, stories}));
 
+  useInterval(() => {
+    console.log('activeStory.currentIndexImage', currentStoryIndex);
+    handleNext(currentStoryIndex);
+  }, 5000);
+
+  async function handlePrev(index) {
+    const isFirstImage = activeStory?.currentIndexImage === 0;
+    const isFirstStory = currentStoryIndex === 0;
+    console.log('prevFN');
+    if (isFirstImage) {
+      console.log('first image');
+      if (isFirstStory) {
+        /*                 console.log('first story');
+                await dispatch(prev({storyindex: index}));
+                await dispatch(resetStories());
+                scrollRef?.current?.scrollTo({x: (stories.length - 1) * width}); */
+      } else {
+        await dispatch(prev({storyindex: index}));
+        scroll?.current?.scrollTo({x: (index - 1) * width});
+      }
+    } else {
+      // console.log('dispatch');
+      await dispatch(prev({storyindex: index}));
+    }
+  }
+
+  async function handleNext(index) {
+    const isLastImage =
+      activeStory?.currentIndexImage === (activeStory?.qtdImages ?? 0) - 1;
+
+    const isLastStory = currentStoryIndex === state.length - 1;
+
+    console.log('hahahahhahah', activeStory);
+    if (isLastImage) {
+      console.log('last image');
+      if (isLastStory) {
+        console.log('last story');
+        await dispatch(next({storyindex: index}));
+        await dispatch(resetStories());
+        scroll?.current?.scrollTo({x: 0});
+      } else {
+        await dispatch(next({storyindex: index}));
+        scroll?.current?.scrollTo({x: (index + 1) * width});
+      }
+    } else {
+      console.log('dispatch');
+      await dispatch(next({storyindex: index}));
+    }
+  }
+
   return (
     <View style={styles.container}>
       {stories.map((story, index) => (
@@ -103,7 +157,7 @@ const Stories = ({stories = []}) => {
             {...{story}}
             selfIndex={index}
             index={state[index]?.currentIndexImage ?? 0}
-            scrollRef={scroll}
+            handleNext={handleNext}
           />
         </Animated.View>
       ))}
@@ -134,63 +188,71 @@ const Stories = ({stories = []}) => {
             if (error) {
               console.log('scrollDirection x ==========> ', scrollDirection.x);
               console.log('currentPosScrol   ==========> ', currentPosScrol);
-              if (scrollDirection.x < currentPosScrol) {
-                console.log('PRA FRENTEEEE ====>');
 
-                if (everyStoryIsInactive) {
-                  console.log('TODOS FALSE');
-                  setScrollDirection({
-                    x: width * (stories.length - 1),
-                    direction: 'FRENTE',
-                  });
-                  dispatch(
-                    changeActiveStory({
-                      index: state.length - 1,
-                      isActive: true,
-                    }),
-                  );
-                } else {
-                  setScrollDirection({x: currentPosScrol, direction: 'FRENTE'});
-                  await dispatch(
-                    changeActiveStory({
-                      index: currentStoryIndex,
-                      isActive: false,
-                    }),
-                  );
-                  await dispatch(
-                    changeActiveStory({
-                      index: currentStoryIndex + 1,
-                      isActive: true,
-                    }),
-                  );
-                }
-              } else if (scrollDirection.x > currentPosScrol) {
-                if (everyStoryIsInactive) {
-                  console.log('TODOS FALSE');
-                  setScrollDirection({x: 0, direction: 'TRAS'});
-                  dispatch(
-                    changeActiveStory({
-                      index: 0,
-                      isActive: true,
-                    }),
-                  );
-                } else {
-                  setScrollDirection({x: currentPosScrol, direction: 'TRAS'});
-                  dispatch(
-                    changeActiveStory({
-                      index: currentStoryIndex,
-                      isActive: false,
-                    }),
-                  );
-                  dispatch(
-                    changeActiveStory({
-                      index: currentStoryIndex - 1,
-                      isActive: true,
-                    }),
-                  );
+              const errorX = Math.floor(
+                Math.abs(scrollDirection.x - currentPosScrol),
+              );
+              if (errorX > 1) {
+                if (scrollDirection.x < currentPosScrol) {
+                  console.log('PRA FRENTEEEE ====>');
+
+                  if (everyStoryIsInactive) {
+                    console.log('TODOS FALSE');
+                    setScrollDirection({
+                      x: width * (stories.length - 1),
+                      direction: 'FRENTE',
+                    });
+                    await dispatch(
+                      changeActiveStory({
+                        index: state.length - 1,
+                        isActive: true,
+                      }),
+                    );
+                  } else {
+                    setScrollDirection({
+                      x: currentPosScrol,
+                      direction: 'FRENTE',
+                    });
+                    await dispatch(
+                      changeActiveStory({
+                        index: currentStoryIndex,
+                        isActive: false,
+                      }),
+                    );
+                    await dispatch(
+                      changeActiveStory({
+                        index: currentStoryIndex + 1,
+                        isActive: true,
+                      }),
+                    );
+                  }
+                } else if (scrollDirection.x > currentPosScrol) {
+                  if (everyStoryIsInactive) {
+                    console.log('TODOS FALSE');
+                    setScrollDirection({x: 0, direction: 'TRAS'});
+                    await dispatch(
+                      changeActiveStory({
+                        index: 0,
+                        isActive: true,
+                      }),
+                    );
+                  } else {
+                    setScrollDirection({x: currentPosScrol, direction: 'TRAS'});
+                    await dispatch(
+                      changeActiveStory({
+                        index: currentStoryIndex,
+                        isActive: false,
+                      }),
+                    );
+                    await dispatch(
+                      changeActiveStory({
+                        index: currentStoryIndex - 1,
+                        isActive: true,
+                      }),
+                    );
+                  }
                 }
               }
-              setIndexPhoto(0);
             }
           },
           useNativeDriver: true,
@@ -199,14 +261,9 @@ const Stories = ({stories = []}) => {
         horizontal>
         <ButtonContainerStory
           stories={stories}
-          scrollRef={scroll}
-          currentStoryIndex={currentStoryIndex}
-          isLastImage={
-            activeStory?.currentIndexImage === (activeStory?.qtdImages ?? 0) - 1
-          }
-          isFirstImage={activeStory?.currentIndexImage === 0}
-          isLastStory={currentStoryIndex === state.length - 1}
-          isFirstStory={currentStoryIndex === 0}
+          handleNext={handleNext}
+          handlePrev={handlePrev}
+          // resetInterval={resetInterval}
         />
       </Animated.ScrollView>
     </View>

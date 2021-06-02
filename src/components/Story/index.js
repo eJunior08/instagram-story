@@ -10,6 +10,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Animated,
+  Easing,
 } from 'react-native';
 import {useInterval} from '../../hooks/useInterval';
 import {useDispatch, useSelector} from 'react-redux';
@@ -49,55 +50,28 @@ const styles = StyleSheet.create({
   },
 });
 
-const Story = ({story, selfIndex, index, scrollRef}) => {
+const Story = ({story, index}) => {
   const {photos} = story;
 
   const animation = useRef(new Animated.Value(0));
-  const dispatch = useDispatch();
 
-  // useEffect(() => {
-  //   Animated.loop(
-  //     Animated.sequence([
-  //       Animated.timing(animation.current, {
-  //         toValue: 100,
-  //         duration: 4000,
-  //         useNativeDriver: false,
-  //       }),
-  //       Animated.timing(animation.current, {
-  //         toValue: 0,
-  //         duration: 0,
-  //         useNativeDriver: false,
-  //       }),
-  //     ]),
-  //   ).start();
-  // }, []);
+  useEffect(() => {
+    const res = Animated.loop(
+      Animated.timing(animation.current, {
+        toValue: 100,
+        duration: 5000,
+        useNativeDriver: false,
+      }),
+    );
 
-  // const width2 = animation.current.interpolate({
-  //   inputRange: [0, 100],
-  //   outputRange: ['0%', '100%'],
-  //   extrapolate: 'clamp',
-  // });
+    res.start();
+  }, []);
 
-  // useInterval(() => {
-  //   if (selfIndex === currentStoryIndex) {
-  //     console.log('selfIndex', selfIndex);
-  //     console.log('currentStoryIndex', currentStoryIndex);
-  //     dispatch(nextImage({storyIndex: selfIndex}));
-  //     console.log('index', index);
-  //     if (index === photos.length - 1) {
-  //       console.log('aq', index);
-  //       if (selfIndex < totalStories - 1)
-  //         dispatch(updateCurrentStoryIndex({index: selfIndex + 1}));
-
-  //       scrollRef?.current?.scrollTo({x: (selfIndex + 1) * width});
-
-  //       if (selfIndex === totalStories - 1) {
-  //         scrollRef?.current?.scrollTo({x: 0});
-  //         dispatch(reset());
-  //       }
-  //     }
-  //   }
-  // }, 4000);
+  const width2 = animation.current.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+    extrapolate: 'clamp',
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,8 +95,9 @@ const Story = ({story, selfIndex, index, scrollRef}) => {
               <Animated.View
                 style={[
                   StyleSheet.absoluteFillObject,
-                  {backgroundColor: 'white', width: '100%'},
-                ]}></Animated.View>
+                  {backgroundColor: 'white', width: width2},
+                ]}
+              />
             )}
           </View>
         ))}
