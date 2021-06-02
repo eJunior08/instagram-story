@@ -38,7 +38,7 @@ const App = () => {
     request();
   }, []); */
 
-  console.log('{...{stories2}}', stories2.length);
+  // console.log('{...{stories2}}', stories2.length);
 
   return (
     <Provider store={store}>

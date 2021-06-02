@@ -10,11 +10,13 @@ const ButtonContainerStory = ({
   handleNext,
   handlePrev,
   resetInterval,
+  setPause,
 }) => {
   return (
     <View style={styles.container}>
       {stories.map((_, index) => (
         <ButtonStory
+          setPause={setPause}
           key={index}
           prevFn={() => {
             handlePrev(index);

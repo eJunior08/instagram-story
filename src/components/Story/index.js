@@ -50,22 +50,25 @@ const styles = StyleSheet.create({
   },
 });
 
-const Story = ({story, index}) => {
+const Story = ({story, index, pause}) => {
   const {photos} = story;
 
   const animation = useRef(new Animated.Value(0));
+  const res = Animated.loop(
+    Animated.timing(animation.current, {
+      toValue: 100,
+      duration: 5000,
+      useNativeDriver: false,
+    }),
+  );
 
   useEffect(() => {
-    const res = Animated.loop(
-      Animated.timing(animation.current, {
-        toValue: 100,
-        duration: 5000,
-        useNativeDriver: false,
-      }),
-    );
-
-    res.start();
-  }, []);
+    if (pause) {
+      res.reset();
+    } else {
+      res.start();
+    }
+  }, [pause]);
 
   const width2 = animation.current.interpolate({
     inputRange: [0, 100],

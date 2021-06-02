@@ -46,7 +46,6 @@ const stories_slice = createSlice({
         );
 
         if (!isLastImage) {
-          console.log('Não é ultima imagem');
           state.stories[payload.storyindex].currentIndexImage++;
         }
       } else {
@@ -62,7 +61,6 @@ const stories_slice = createSlice({
         const isFirstImage = currentStory.currentIndexImage === 0;
 
         if (!isFirstImage) {
-          console.log('Não é a primeira imagem');
           state.stories[payload.storyindex].currentIndexImage--;
         }
       } else {
@@ -70,23 +68,12 @@ const stories_slice = createSlice({
           story => story.isActive && story.currentIndexImage--,
         );
       }
-      /* if (payload.storyindex) {
-        console.log('payload', payload);
-        const currentStory = state.stories[payload.storyindex];
-        console.log('currentStory', currentStory);
-        if (currentStory.currentIndexImage > 0)
-          state.stories[payload.storyindex].currentIndexImage--;
-      } else {
-        state.stories.forEach(
-          story => story.isActive && story.currentIndexImage--,
-        );
-      } */
     },
     changeActiveStory: (state, {payload}) => {
       state.stories[payload.index].isActive = payload.isActive;
     },
     resetStories: state => {
-      console.log('resetou');
+      // console.log('resetou');
       state.stories.forEach(s => {
         s.currentIndexImage = 0;
         s.isActive = false;

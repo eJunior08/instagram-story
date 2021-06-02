@@ -5,13 +5,12 @@ import ButtonContainerStory from '../ButtonContainerStory';
 import Story from '../Story';
 
 import {
-  create,
-  updateCurrentStoryIndex,
-  initStories,
   changeActiveStory,
+  create,
+  initStories,
   next,
-  resetStories,
   prev,
+  resetStories,
 } from '../../redux/slices/stories.slice';
 
 const {width} = Dimensions.get('window');
@@ -25,19 +24,15 @@ import {useInterval} from '../../hooks/useInterval';
 const Stories = ({stories = []}) => {
   const [x, setX] = useState(new Animated.Value(0));
   const scroll = useRef(null);
-  const [delay, setDelay] = useState(4000);
 
   const qtdStories = stories.length;
   const arrQtdImages = stories.map(story => story.photos.length);
 
   const state = useSelector(state => state.stories.stories);
-  // console.log('state', state);
 
   const activeStory = state.find(s => s.isActive);
-  console.log('activeStory ====> ', activeStory);
 
   const [scrollDirection, setScrollDirection] = useState({
-    direction: 'FRENTE',
     x: 0,
   });
 
@@ -45,13 +40,15 @@ const Stories = ({stories = []}) => {
     state => state.stories.stories,
   ).findIndex(s => s.isActive);
 
-  console.log('currentStoryIndex', currentStoryIndex);
-
   const everyStoryIsInactive = useSelector(
     state => state.stories.stories,
   ).every(s => !s.isActive);
 
   const dispatch = useDispatch();
+
+  const duration = 5000;
+  const [pause, setPause] = useState(false);
+  const [difference, setDifference] = useState(5000);
 
   const getStyle = index => {
     const offset = width * index;
@@ -99,43 +96,39 @@ const Stories = ({stories = []}) => {
 
   dispatch(create({totalStories: stories.length, stories}));
 
-  useInterval(() => {
-    console.log('activeStory.currentIndexImage', currentStoryIndex);
-    handleNext(currentStoryIndex);
-  }, 5000);
+  useInterval(
+    () => {
+      handleNext(currentStoryIndex);
+    },
+    pause ? null : duration,
+  );
 
   async function handlePrev(index) {
+    setPause(true);
     const isFirstImage = activeStory?.currentIndexImage === 0;
     const isFirstStory = currentStoryIndex === 0;
-    console.log('prevFN');
+
     if (isFirstImage) {
-      console.log('first image');
       if (isFirstStory) {
-        /*                 console.log('first story');
-                await dispatch(prev({storyindex: index}));
-                await dispatch(resetStories());
-                scrollRef?.current?.scrollTo({x: (stories.length - 1) * width}); */
       } else {
         await dispatch(prev({storyindex: index}));
         scroll?.current?.scrollTo({x: (index - 1) * width});
       }
     } else {
-      // console.log('dispatch');
       await dispatch(prev({storyindex: index}));
     }
+    setPause(false);
   }
 
   async function handleNext(index) {
+    setPause(true);
     const isLastImage =
       activeStory?.currentIndexImage === (activeStory?.qtdImages ?? 0) - 1;
 
     const isLastStory = currentStoryIndex === state.length - 1;
 
-    console.log('hahahahhahah', activeStory);
     if (isLastImage) {
-      console.log('last image');
       if (isLastStory) {
-        console.log('last story');
         await dispatch(next({storyindex: index}));
         await dispatch(resetStories());
         scroll?.current?.scrollTo({x: 0});
@@ -144,10 +137,12 @@ const Stories = ({stories = []}) => {
         scroll?.current?.scrollTo({x: (index + 1) * width});
       }
     } else {
-      console.log('dispatch');
       await dispatch(next({storyindex: index}));
     }
+    setPause(false);
   }
+
+  function handleScroll() {}
 
   return (
     <View style={styles.container}>
@@ -158,6 +153,7 @@ const Stories = ({stories = []}) => {
             selfIndex={index}
             index={state[index]?.currentIndexImage ?? 0}
             handleNext={handleNext}
+            pause={pause}
           />
         </Animated.View>
       ))}
@@ -171,6 +167,7 @@ const Stories = ({stories = []}) => {
         contentContainerStyle={{width: width * stories.length}}
         onScroll={Animated.event([{nativeEvent: {contentOffset: {x}}}], {
           listener: async e => {
+            setPause(true);
             const currentPosScrol = e.nativeEvent.contentOffset.x;
 
             const resto =
@@ -186,21 +183,21 @@ const Stories = ({stories = []}) => {
             // console.log('error', error);
 
             if (error) {
-              console.log('scrollDirection x ==========> ', scrollDirection.x);
-              console.log('currentPosScrol   ==========> ', currentPosScrol);
+              setPause(false);
+              /* console.log('scrollDirection x ==========> ', scrollDirection.x);
+              console.log('currentPosScrol   ==========> ', currentPosScrol); */
 
               const errorX = Math.floor(
                 Math.abs(scrollDirection.x - currentPosScrol),
               );
               if (errorX > 1) {
                 if (scrollDirection.x < currentPosScrol) {
-                  console.log('PRA FRENTEEEE ====>');
+                  // console.log('PRA FRENTEEEE ====>');
 
                   if (everyStoryIsInactive) {
-                    console.log('TODOS FALSE');
+                    /* console.log('TODOS FALSE'); */
                     setScrollDirection({
                       x: width * (stories.length - 1),
-                      direction: 'FRENTE',
                     });
                     await dispatch(
                       changeActiveStory({
@@ -211,7 +208,6 @@ const Stories = ({stories = []}) => {
                   } else {
                     setScrollDirection({
                       x: currentPosScrol,
-                      direction: 'FRENTE',
                     });
                     await dispatch(
                       changeActiveStory({
@@ -228,8 +224,8 @@ const Stories = ({stories = []}) => {
                   }
                 } else if (scrollDirection.x > currentPosScrol) {
                   if (everyStoryIsInactive) {
-                    console.log('TODOS FALSE');
-                    setScrollDirection({x: 0, direction: 'TRAS'});
+                    /* console.log('TODOS FALSE'); */
+                    setScrollDirection({x: 0});
                     await dispatch(
                       changeActiveStory({
                         index: 0,
@@ -237,7 +233,7 @@ const Stories = ({stories = []}) => {
                       }),
                     );
                   } else {
-                    setScrollDirection({x: currentPosScrol, direction: 'TRAS'});
+                    setScrollDirection({x: currentPosScrol});
                     await dispatch(
                       changeActiveStory({
                         index: currentStoryIndex,
@@ -263,6 +259,7 @@ const Stories = ({stories = []}) => {
           stories={stories}
           handleNext={handleNext}
           handlePrev={handlePrev}
+          setPause={setPause}
           // resetInterval={resetInterval}
         />
       </Animated.ScrollView>
