@@ -1,54 +1,35 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Animated, StyleSheet, View, Dimensions} from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
-import ButtonContainerStory from '../ButtonContainerStory';
-import Story from '../Story';
 
-import {
-  changeActiveStory,
-  create,
-  initStories,
-  next,
-  prev,
-  resetStories,
-} from '../../redux/slices/stories.slice';
+/* Components */
+import Story from '../Story';
+import ScrollStory from '../ScrollStory';
+
+/* Hooks */
+import {useInterval} from '../../hooks/useInterval';
+
+/* Styles */
+import styles from './styles';
 
 const {width} = Dimensions.get('window');
 const perspective = width;
 const angle = Math.atan(perspective / (width / 2));
 const ratio = Platform.OS === 'ios' ? 2 : 1.15;
 
-import styles from './styles';
-import {useInterval} from '../../hooks/useInterval';
+const Stories = ({stories = [], children}) => {
+  const qtdStories = stories.length;
+  const arrQtdImages = stories.map(story => story.photos.length);
+  const [testeStories, setTesteStories] = useState(startTesteStories());
 
-const Stories = ({stories = []}) => {
   const [x, setX] = useState(new Animated.Value(0));
   const scroll = useRef(null);
 
-  const qtdStories = stories.length;
-  const arrQtdImages = stories.map(story => story.photos.length);
-
-  const state = useSelector(state => state.stories.stories);
-
-  const activeStory = state.find(s => s.isActive);
-
-  const [scrollDirection, setScrollDirection] = useState({
-    x: 0,
-  });
-
-  const currentStoryIndex = useSelector(
-    state => state.stories.stories,
-  ).findIndex(s => s.isActive);
-
-  const everyStoryIsInactive = useSelector(
-    state => state.stories.stories,
-  ).every(s => !s.isActive);
-
-  const dispatch = useDispatch();
+  const activeStory = testeStories.find(s => s.isActive);
+  const currentStoryIndex = testeStories.findIndex(s => s.isActive);
+  const everyStoryIsInactive = testeStories.every(s => !s.isActive);
 
   const duration = 5000;
   const [pause, setPause] = useState(false);
-  const [difference, setDifference] = useState(5000);
 
   const getStyle = index => {
     const offset = width * index;
@@ -90,18 +71,92 @@ const Stories = ({stories = []}) => {
     };
   };
 
-  useEffect(() => {
-    dispatch(initStories({qtdStories, arrQtdImages}));
-  }, []);
+  useInterval(() => handleNext(currentStoryIndex), pause ? null : duration);
 
-  dispatch(create({totalStories: stories.length, stories}));
+  function startTesteStories() {
+    const arr = [...Array(qtdStories)].map((arr, index) => ({
+      currentIndexImage: 0,
+      qtdImages: arrQtdImages[index],
+      isActive: false,
+    }));
 
-  useInterval(
-    () => {
-      handleNext(currentStoryIndex);
-    },
-    pause ? null : duration,
-  );
+    arr[0].isActive = true;
+
+    return arr;
+  }
+
+  async function nextTesteStories(storyindex) {
+    if (!isNaN(storyindex)) {
+      const {currentIndexImage, qtdImages} = testeStories[storyindex];
+
+      const isLastImage = !(currentIndexImage < qtdImages - 1);
+
+      if (!isLastImage) {
+        const arr = testeStories.map((t, index) =>
+          index === storyindex
+            ? {
+                currentIndexImage: t.currentIndexImage + 1,
+                qtdImages: t.qtdImages,
+                isActive: t.isActive,
+              }
+            : t,
+        );
+        await setTesteStories(arr);
+      }
+    }
+  }
+
+  async function changeActiveStoryTesteStories(storyindex, isActive, change) {
+    const arr = testeStories.map((t, index) =>
+      index === storyindex
+        ? {
+            currentIndexImage: t.currentIndexImage,
+            qtdImages: t.qtdImages,
+            isActive: isActive,
+          }
+        : t,
+    );
+
+    if (change === 'NEXT') {
+      arr[storyindex + 1].isActive = true;
+    } else if (change === 'PREV') {
+      arr[storyindex - 1].isActive = true;
+    }
+
+    // console.log('arr', arr);
+    await setTesteStories(arr);
+  }
+
+  function resetStoriesTesteStories() {
+    const arr = testeStories.map(t => ({
+      currentIndexImage: 0,
+      qtdImages: t.qtdImages,
+      isActive: false,
+    }));
+
+    setTesteStories(arr);
+  }
+
+  async function prevTesteStories(storyindex) {
+    if (!isNaN(storyindex)) {
+      const {currentIndexImage} = testeStories[storyindex];
+
+      const isFirstImage = currentIndexImage === 0;
+
+      if (!isFirstImage) {
+        const arr = testeStories.map((t, index) =>
+          index === storyindex
+            ? {
+                currentIndexImage: t.currentIndexImage - 1,
+                qtdImages: t.qtdImages,
+                isActive: t.isActive,
+              }
+            : t,
+        );
+        await setTesteStories(arr);
+      }
+    }
+  }
 
   async function handlePrev(index) {
     setPause(true);
@@ -111,11 +166,11 @@ const Stories = ({stories = []}) => {
     if (isFirstImage) {
       if (isFirstStory) {
       } else {
-        await dispatch(prev({storyindex: index}));
+        await prevTesteStories(index);
         scroll?.current?.scrollTo({x: (index - 1) * width});
       }
     } else {
-      await dispatch(prev({storyindex: index}));
+      await prevTesteStories(index);
     }
     setPause(false);
   }
@@ -125,24 +180,22 @@ const Stories = ({stories = []}) => {
     const isLastImage =
       activeStory?.currentIndexImage === (activeStory?.qtdImages ?? 0) - 1;
 
-    const isLastStory = currentStoryIndex === state.length - 1;
+    const isLastStory = currentStoryIndex === testeStories.length - 1;
 
     if (isLastImage) {
       if (isLastStory) {
-        await dispatch(next({storyindex: index}));
-        await dispatch(resetStories());
+        await nextTesteStories(index);
+        resetStoriesTesteStories();
         scroll?.current?.scrollTo({x: 0});
       } else {
-        await dispatch(next({storyindex: index}));
+        await nextTesteStories(index);
         scroll?.current?.scrollTo({x: (index + 1) * width});
       }
     } else {
-      await dispatch(next({storyindex: index}));
+      await nextTesteStories(index);
     }
     setPause(false);
   }
-
-  function handleScroll() {}
 
   return (
     <View style={styles.container}>
@@ -151,118 +204,24 @@ const Stories = ({stories = []}) => {
           <Story
             {...{story}}
             selfIndex={index}
-            index={state[index]?.currentIndexImage ?? 0}
+            index={testeStories[index]?.currentIndexImage ?? 0}
             handleNext={handleNext}
-            pause={pause}
-          />
+            pause={pause}>
+            {children}
+          </Story>
         </Animated.View>
       ))}
-
-      <Animated.ScrollView
-        ref={scroll}
-        style={StyleSheet.absoluteFillObject}
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        snapToInterval={0}
-        contentContainerStyle={{width: width * stories.length}}
-        onScroll={Animated.event([{nativeEvent: {contentOffset: {x}}}], {
-          listener: async e => {
-            setPause(true);
-            const currentPosScrol = e.nativeEvent.contentOffset.x;
-
-            const resto =
-              currentPosScrol % e.nativeEvent.layoutMeasurement.width;
-
-            const error =
-              resto > 0
-                ? Math.floor(
-                    Math.abs(resto - e.nativeEvent.layoutMeasurement.width),
-                  ) === 0
-                : resto === 0;
-
-            // console.log('error', error);
-
-            if (error) {
-              setPause(false);
-              /* console.log('scrollDirection x ==========> ', scrollDirection.x);
-              console.log('currentPosScrol   ==========> ', currentPosScrol); */
-
-              const errorX = Math.floor(
-                Math.abs(scrollDirection.x - currentPosScrol),
-              );
-              if (errorX > 1) {
-                if (scrollDirection.x < currentPosScrol) {
-                  // console.log('PRA FRENTEEEE ====>');
-
-                  if (everyStoryIsInactive) {
-                    /* console.log('TODOS FALSE'); */
-                    setScrollDirection({
-                      x: width * (stories.length - 1),
-                    });
-                    await dispatch(
-                      changeActiveStory({
-                        index: state.length - 1,
-                        isActive: true,
-                      }),
-                    );
-                  } else {
-                    setScrollDirection({
-                      x: currentPosScrol,
-                    });
-                    await dispatch(
-                      changeActiveStory({
-                        index: currentStoryIndex,
-                        isActive: false,
-                      }),
-                    );
-                    await dispatch(
-                      changeActiveStory({
-                        index: currentStoryIndex + 1,
-                        isActive: true,
-                      }),
-                    );
-                  }
-                } else if (scrollDirection.x > currentPosScrol) {
-                  if (everyStoryIsInactive) {
-                    /* console.log('TODOS FALSE'); */
-                    setScrollDirection({x: 0});
-                    await dispatch(
-                      changeActiveStory({
-                        index: 0,
-                        isActive: true,
-                      }),
-                    );
-                  } else {
-                    setScrollDirection({x: currentPosScrol});
-                    await dispatch(
-                      changeActiveStory({
-                        index: currentStoryIndex,
-                        isActive: false,
-                      }),
-                    );
-                    await dispatch(
-                      changeActiveStory({
-                        index: currentStoryIndex - 1,
-                        isActive: true,
-                      }),
-                    );
-                  }
-                }
-              }
-            }
-          },
-          useNativeDriver: true,
-        })}
-        decelerationRate={'fast'}
-        horizontal>
-        <ButtonContainerStory
-          stories={stories}
-          handleNext={handleNext}
-          handlePrev={handlePrev}
-          setPause={setPause}
-          // resetInterval={resetInterval}
-        />
-      </Animated.ScrollView>
+      <ScrollStory
+        scroll={scroll}
+        stories={stories}
+        handleNext={handleNext}
+        handlePrev={handlePrev}
+        setPause={setPause}
+        x={x}
+        everyStoryIsInactive={everyStoryIsInactive}
+        currentStoryIndex={currentStoryIndex}
+        changeActiveStoryTesteStories={changeActiveStoryTesteStories}
+      />
     </View>
   );
 };

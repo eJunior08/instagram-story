@@ -5,13 +5,7 @@ import ButtonStory from '../ButtonStory';
 
 import styles from './styles';
 
-const ButtonContainerStory = ({
-  stories,
-  handleNext,
-  handlePrev,
-  resetInterval,
-  setPause,
-}) => {
+const ButtonContainerStory = ({stories, handleNext, handlePrev, setPause}) => {
   return (
     <View style={styles.container}>
       {stories.map((_, index) => (
@@ -22,7 +16,6 @@ const ButtonContainerStory = ({
             handlePrev(index);
           }}
           nextFn={() => {
-            // resetInterval();
             handleNext(index);
           }}
         />

@@ -1,56 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {
-  Image,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  Dimensions,
-  TouchableWithoutFeedback,
-  Animated,
-  Easing,
-} from 'react-native';
-import {useInterval} from '../../hooks/useInterval';
-import {useDispatch, useSelector} from 'react-redux';
+import React, {useEffect, useRef} from 'react';
+import {Animated, Image, SafeAreaView, StyleSheet, View} from 'react-native';
 
-import {
-  nextImage,
-  reset,
-  updateCurrentStoryIndex,
-} from '../../redux/slices/stories.slice';
+import styles from './styles';
 
-const {width} = Dimensions.get('window');
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  image: {
-    ...StyleSheet.absoluteFill,
-    width: null,
-    height: null,
-  },
-
-  header: {
-    // ...StyleSheet.absoluteFillObject,
-    // bottom: 0,
-    position: 'absolute',
-    top: 0,
-    width: width,
-    // backgroundColor: 'red',
-    height: 20,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    flexDirection: 'row',
-
-    padding: 16,
-  },
-});
-
-const Story = ({story, index, pause}) => {
+const Story = ({story, index, pause, children, style}) => {
   const {photos} = story;
 
   const animation = useRef(new Animated.Value(0));
@@ -77,12 +30,7 @@ const Story = ({story, index, pause}) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Image
-        style={styles.image}
-        source={{width: '100%', uri: photos[index]?.source}}
-      />
-
+    <SafeAreaView style={[styles.container, style]}>
       <View style={styles.header}>
         {photos.map((_, i) => (
           <View
@@ -105,6 +53,13 @@ const Story = ({story, index, pause}) => {
           </View>
         ))}
       </View>
+
+      <Image
+        style={styles.image}
+        source={{width: '100%', uri: photos[index]?.source}}
+      />
+
+      {children}
     </SafeAreaView>
   );
 };
